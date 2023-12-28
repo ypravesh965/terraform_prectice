@@ -1,0 +1,71 @@
+{
+    "Comment": "A description of my state machine",
+    "StartAt": "Pass",
+    "States": {
+      "Pass": {
+        "Type": "Pass",
+        "Next": "InContactList"
+      },
+      "InContactList": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.inContact",
+            "BooleanEquals": true,
+            "Next": "Add to known folder"
+          },
+          {
+            "Variable": "$.inContact",
+            "BooleanEquals": false,
+            "Next": "Check contact list"
+          }
+        ],
+        "Default": "Default"
+      },
+      "Add to known folder": {
+        "Type": "Pass",
+        "End": true
+      },
+      "Default": {
+        "Type": "Pass",
+        "End": true
+      },
+      "Check contact list": {
+        "Type": "Pass",
+        "Next": "IsSpamList"
+      },
+      "IsSpamList": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.isSpam",
+            "BooleanEquals": true,
+            "Next": "Delete"
+          },
+          {
+            "Variable": "$.isSpam",
+            "BooleanEquals": false,
+            "Next": "Review"
+          }
+        ],
+        "Default": "DefaultChoice"
+      },
+      "Delete": {
+        "Type": "Pass",
+        "End": true
+      },
+      "DefaultChoice": {
+        "Type": "Pass",
+        "End": true
+      },
+      "Review": {
+        "Type": "Pass",
+        "Next": "ReadingMessage"
+      },
+      "ReadingMessage": {
+        "Type": "Wait",
+        "SecondsPath": "$.waitTime",
+        "End": true
+      }
+    }
+  }

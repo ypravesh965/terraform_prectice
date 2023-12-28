@@ -1,0 +1,92 @@
+{
+    "Comment": "A description of my state machine",
+    "StartAt": "ContactInfo",
+    "States": {
+      "ContactInfo": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::lambda:invoke",
+        "Parameters": {
+          "Payload.$": "$",
+          "FunctionName": "arn:aws:lambda:us-east-1:736370134088:function:contactValidator:$LATEST"
+        },
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "Next": "Choice",
+        "ResultSelector": {
+          "validated.$": "$.Payload.validated"
+        },
+        "ResultPath": "$.Payload"
+      },
+      "Choice": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.Payload.validated",
+            "BooleanEquals": true,
+            "Next": "DynamoDB PutItem"
+          }
+        ],
+        "Default": "PublishErrorMessage"
+      },
+      "DynamoDB PutItem": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::dynamodb:putItem",
+        "Parameters": {
+          "TableName": "contact",
+          "Item": {
+            "id": {
+              "S.$": "$.name"
+            },
+            "name": {
+              "S.$": "$.name"
+            },
+            "email": {
+              "S.$": "$.email"
+            },
+            "message": {
+              "S.$": "$.message"
+            }
+          }
+        },
+        "Next": "PublishSuccessMessage",
+        "ResultPath": "$.taskResult"
+      },
+      "PublishSuccessMessage": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::sns:publish",
+        "Parameters": {
+          "TopicArn": "arn:aws:sns:us-east-1:736370134088:contact_topic",
+          "Message": {
+            "name.$": "$.name",
+            "Description": "Added this contact to dynamoDB"
+          }
+        },
+        "End": true,
+        "InputPath": "$",
+        "ResultPath": "$.taskResult"
+      },
+      "PublishErrorMessage": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::sns:publish",
+        "Parameters": {
+          "TopicArn": "arn:aws:sns:us-east-1:736370134088:contact_topic",
+          "Message": {
+            "name.$": "$.name",
+            "Description": "This contact is not available"
+          }
+        },
+        "End": true
+      }
+    }
+  }
