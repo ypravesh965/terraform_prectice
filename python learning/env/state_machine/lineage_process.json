@@ -1,0 +1,66 @@
+{
+    "Comment": "A description of my state machine",
+    "StartAt": "Wait",
+    "States": {
+      "Wait": {
+        "Type": "Wait",
+        "Seconds": 5,
+        "Next": "CallingRandomFunction"
+      },
+      "CallingRandomFunction": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::lambda:invoke",
+        "OutputPath": "$.Payload",
+        "Parameters": {
+          "Payload.$": "$",
+          "FunctionName": "arn:aws:lambda:us-east-1:736370134088:function:lambda_step_fun:$LATEST"
+        },
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "Next": "Pass"
+      },
+      "Pass": {
+        "Type": "Pass",
+        "Next": "Wait2"
+      },
+      "Wait2": {
+        "Type": "Wait",
+        "Seconds": 5,
+        "Next": "Lambda2"
+      },
+      "Lambda2": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::lambda:invoke",
+        "OutputPath": "$.Payload",
+        "Parameters": {
+          "Payload.$": "$",
+          "FunctionName": "arn:aws:lambda:us-east-1:736370134088:function:lambda_step_part2:$LATEST"
+        },
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "End": true
+      }
+    }
+  }
